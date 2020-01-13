@@ -53,12 +53,12 @@ jobs:
     parameters:
       src:
         type: string
-        default: ${CIRCLE_WORKING_DIRECTORY}
+        default: ${PWD}
         description: |
           Source directory to scan. Defaults to circle work directory
       output:
         type: string
-        default: ${CIRCLE_WORKING_DIRECTORY}/reports
+        default: ${PWD}/reports
         description: |
           Output directory for the generated reports. Defaults to reports
       repo_type:
@@ -66,15 +66,19 @@ jobs:
         default: ""
         description: |
           Project type. Eg: java, python, nodejs. Comma separated multiple values allowed
-
+      workspace:
+        type: string
+        default: "${CIRCLE_REPOSITORY_URL}"
+        description: |
+          Workspace prefix to be added to the file path to help with navigation
     steps:
       - checkout
       - run:
-          name: Check Repo
+          name: Run sast-scan on repo
           command: |
-            export WORKSPACE="$CIRCLE_REPOSITORY_URL"
+            export WORKSPACE=<< parameters.workspace >>
             echo "Running sast-scan..."
-            scan --src '<< parameters.src >>' --out_dir '<< parameters.output >>' --type '<< parameters.repo_type >>'
+            scan --src << parameters.src >> --out_dir << parameters.output >> --type << parameters.repo_type >>
       - store_artifacts:
           path: '<< parameters.output >>'
           destination: sast-scan-reports
