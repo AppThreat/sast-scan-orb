@@ -1,0 +1,80 @@
+version: 2.1
+
+description: |
+  sast-scan is a fully open-source Static Analysis Security Testing (SAST) scanner supporting a range of languages and frameworks
+  Source code of sast-scan: https://github.com/AppThreat/sast-scan
+  Source code for ths orb: https://github.com/AppThreat/sast-scan-orb
+
+executors:
+  sast-scan:
+    description: |
+      This is the container image that contains the `sast-scan`.
+    docker:
+      - image: quay.io/appthreat/sast-scan
+
+examples:
+  build-test-workflow:
+    description: |
+      Checkout and run sast-scan against the repo. Produce reports in `reports` directory
+
+    usage:
+      version: 2.1
+
+      orbs:
+        sast-scan: appthreat/sast-scan@x.y.z
+
+      workflows:
+        sast-scan:
+          jobs:
+            - sast-scan/scan
+
+  override-type:
+    description: |
+      Checkout and run sast-scan against the repo. Specify the project type to credscan and java
+
+    usage:
+      version: 2.1
+
+      orbs:
+        sast-scan: appthreat/sast-scan@x.y.z
+
+      workflows:
+        sast-scan:
+          jobs:
+            - sast-scan/scan:
+                repo_type: 'credscan,java'
+
+jobs:
+  scan:
+    description: |
+      Run sast-scan against this repository. Project type will be detected automatically. You can
+      also override the type if required
+    executor: sast-scan
+    parameters:
+      src:
+        type: string
+        default: ${CIRCLE_WORKING_DIRECTORY}
+        description: |
+          Source directory to scan. Defaults to circle work directory
+      output:
+        type: string
+        default: ${CIRCLE_WORKING_DIRECTORY}/reports
+        description: |
+          Output directory for the generated reports. Defaults to reports
+      repo_type:
+        type: string
+        default: ""
+        description: |
+          Project type. Eg: java, python, nodejs. Comma separated multiple values allowed
+
+    steps:
+      - checkout
+      - run:
+          name: Check Repo
+          command: |
+            export WORKSPACE="$CIRCLE_REPOSITORY_URL"
+            echo "Running sast-scan..."
+            scan --src '<< parameters.src >>' --out_dir '<< parameters.output >>' --type '<< parameters.repo_type >>'
+      - store_artifacts:
+          path: '<< parameters.output >>'
+          destination: sast-scan-reports
